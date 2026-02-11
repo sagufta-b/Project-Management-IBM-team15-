@@ -32,8 +32,8 @@ const CreateTaskModal = ({ isOpen, onClose, onCreated, initialProjectId = '' }) 
     useEffect(() => {
         if (isOpen) {
             Promise.all([
-                axios.get('/api/projects'),
-                axios.get('/api/users')
+                axios.get('http://localhost:5000/api/projects'),
+                axios.get('http://localhost:5000/api/users')
             ]).then(([projectRes, userRes]) => {
                 setProjects(projectRes?.data?.data || []);
                 setUsers(userRes?.data?.data || []);
@@ -78,7 +78,7 @@ const CreateTaskModal = ({ isOpen, onClose, onCreated, initialProjectId = '' }) 
                 uploadData.append('file', file);
                 uploadData.append('project', formData.project);
 
-                const res = await axios.post('/api/files', uploadData, {
+                const res = await axios.post('http://localhost:5000/api/files', uploadData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
 
@@ -116,7 +116,7 @@ const CreateTaskModal = ({ isOpen, onClose, onCreated, initialProjectId = '' }) 
                 attachments: attachments
             };
 
-            await axios.post('/api/tasks', taskData);
+            await axios.post('http://localhost:5000/api/tasks', taskData);
             onCreated();
             onClose();
             setFormData({ title: '', description: '', project: initialProjectId || '', priority: 'medium', dueDate: '', assignees: [] });

@@ -1,17 +1,17 @@
 import axios from 'axios';
 
 export const getTimesheets = async () => {
-    const res = await axios.get('/api/timesheets');
+    const res = await axios.get('http://localhost:5000/api/timesheets');
     return res.data;
 };
 
 export const createTimesheet = async (data) => {
-    const res = await axios.post('/api/timesheets', data);
+    const res = await axios.post('http://localhost:5000/api/timesheets', data);
     return res.data;
 };
 
 export const exportTimesheets = async () => {
-    const res = await axios.get('/api/timesheets/export', {
+    const res = await axios.get('http://localhost:5000/api/timesheets/export', {
         responseType: 'blob'
     });
 

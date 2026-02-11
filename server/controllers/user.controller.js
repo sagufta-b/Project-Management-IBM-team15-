@@ -5,7 +5,7 @@ const asyncHandler = require('express-async-handler');
 // @route   GET /api/users
 // @access  Private
 exports.getUsers = asyncHandler(async (req, res) => {
-    const users = await User.find({}).select('name email role');
+    const users = await User.find({}).select('name email role isActive');
 
     res.status(200).json({
         success: true,

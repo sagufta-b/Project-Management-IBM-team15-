@@ -11,8 +11,10 @@ import { toast } from 'react-hot-toast';
 import { getTimesheets, createTimesheet, exportTimesheets } from '@/api/timesheet';
 import { getProjects } from '@/api/project';
 import { getProjectTasks } from '@/api/task';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Timesheets = () => {
+    const { user: currentUser } = useAuth();
     const [entries, setEntries] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isLogModalOpen, setIsLogModalOpen] = useState(false);
@@ -99,6 +101,7 @@ const Timesheets = () => {
         setIsDetailModalOpen(true);
     };
 
+    const isPrivileged = ['admin', 'project_manager', 'team_lead'].includes(currentUser?.role);
     const totalHours = entries.reduce((sum, entry) => sum + entry.hours, 0);
 
     return (
@@ -148,6 +151,7 @@ const Timesheets = () => {
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="pl-6">Date</TableHead>
+                                {isPrivileged && <TableHead>User</TableHead>}
                                 <TableHead>Project</TableHead>
                                 <TableHead>Task</TableHead>
                                 <TableHead>Status</TableHead>
@@ -157,13 +161,13 @@ const Timesheets = () => {
                         <TableBody>
                             {isLoading ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center py-8 text-slate-500">
+                                    <TableCell colSpan={isPrivileged ? 6 : 5} className="text-center py-8 text-slate-500">
                                         Loading timesheets...
                                     </TableCell>
                                 </TableRow>
                             ) : entries.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center py-8 text-slate-500">
+                                    <TableCell colSpan={isPrivileged ? 6 : 5} className="text-center py-8 text-slate-500">
                                         No timesheets found. Start by logging some time!
                                     </TableCell>
                                 </TableRow>
@@ -172,6 +176,16 @@ const Timesheets = () => {
                                     <TableCell className="pl-6 text-slate-600 font-medium">
                                         {new Date(entry.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                                     </TableCell>
+                                    {isPrivileged && (
+                                        <TableCell>
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-700">
+                                                    {entry.user?.name?.charAt(0) || '?'}
+                                                </div>
+                                                <span className="text-sm font-medium text-slate-700">{entry.user?.name || 'Unknown'}</span>
+                                            </div>
+                                        </TableCell>
+                                    )}
                                     <TableCell>
                                         <span className="font-semibold text-slate-900">{entry.project?.title || 'N/A'}</span>
                                     </TableCell>
@@ -288,6 +302,10 @@ const Timesheets = () => {
                     {selectedLog && (
                         <div className="p-6 space-y-6">
                             <div className="grid grid-cols-2 gap-y-4">
+                                <div>
+                                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">User</p>
+                                    <p className="text-sm font-medium text-slate-900">{selectedLog.user?.name || 'Unknown'}</p>
+                                </div>
                                 <div>
                                     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Date</p>
                                     <p className="text-sm font-medium text-slate-900">

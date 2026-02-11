@@ -130,13 +130,6 @@ const Login = () => {
                 />
             </div>
 
-            <div className="mt-8 text-center text-sm text-slate-500">
-                Don't have an account yet?{' '}
-                <Link to="/register" className="font-bold text-indigo-600 hover:text-indigo-500 transition-colors">
-                    Create an account
-                </Link>
-            </div>
-
             <div className="mt-10 pt-10 border-t border-slate-100">
                 <p className="text-xs text-center text-slate-400 font-medium">
                     Industry-grade project management for teams that scale.

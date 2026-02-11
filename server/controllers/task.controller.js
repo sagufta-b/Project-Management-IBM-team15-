@@ -20,6 +20,11 @@ exports.getTasks = asyncHandler(async (req, res) => {
         delete queryObj.projectId;
     }
 
+    // Role-based filtering for Member
+    if (req.user.role === 'member') {
+        queryObj.assignees = req.user.id;
+    }
+
     const tasks = await Task.find(queryObj)
         .populate('assignees', 'name avatar')
         .populate('project', 'title');
@@ -48,6 +53,15 @@ exports.getTask = asyncHandler(async (req, res) => {
     if (!task) {
         res.status(404);
         throw new Error('Task not found');
+    }
+
+    // Role-based access check for Member
+    if (req.user.role === 'member') {
+        const isAssignee = task.assignees.some(id => id._id ? id._id.toString() === req.user.id : id.toString() === req.user.id);
+        if (!isAssignee) {
+            res.status(403);
+            throw new Error('Not authorized to access this task');
+        }
     }
 
     res.status(200).json({

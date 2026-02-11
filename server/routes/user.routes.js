@@ -5,6 +5,6 @@ const router = express.Router();
 
 router.use(protect);
 
-router.get('/', getUsers);
+router.get('/users', getUsers);
 
 module.exports = router;

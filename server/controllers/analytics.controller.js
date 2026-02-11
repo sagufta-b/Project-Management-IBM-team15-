@@ -11,16 +11,28 @@ const getTaskFilters = (req) => {
     const orgId = req.user.organization;
 
     // Base match for organization (via project)
-    const match = { 'projectData.organization': new mongoose.Types.ObjectId(orgId) };
+    const match = {};
 
-    if (projectId && projectId !== 'all') {
+    if (orgId) {
+        match['projectData.organization'] = new mongoose.Types.ObjectId(orgId);
+    }
+
+    if (projectId && projectId !== 'all' && mongoose.Types.ObjectId.isValid(projectId)) {
         match.project = new mongoose.Types.ObjectId(projectId);
     }
 
     if (startDate || endDate) {
         match.createdAt = {};
-        if (startDate) match.createdAt.$gte = new Date(startDate);
-        if (endDate) match.createdAt.$lte = new Date(endDate);
+        if (startDate && !isNaN(new Date(startDate).getTime())) {
+            match.createdAt.$gte = new Date(startDate);
+        }
+        if (endDate && !isNaN(new Date(endDate).getTime())) {
+            match.createdAt.$lte = new Date(endDate);
+        }
+        // If match.createdAt is still empty, remove it
+        if (Object.keys(match.createdAt).length === 0) {
+            delete match.createdAt;
+        }
     }
 
     return match;
@@ -31,19 +43,35 @@ const getTaskFilters = (req) => {
 // @access    Private
 exports.getProjectProgress = asyncHandler(async (req, res) => {
     const orgId = req.user.organization;
-    const { projectId } = req.query;
+    const { projectId, startDate, endDate } = req.query;
 
     let projectQuery = { organization: orgId };
-    if (projectId && projectId !== 'all') {
+    if (projectId && projectId !== 'all' && mongoose.Types.ObjectId.isValid(projectId)) {
         projectQuery._id = projectId;
     }
 
     const projects = await Project.find(projectQuery).select('title status startDate endDate');
 
     const projectProgress = await Promise.all(projects.map(async (project) => {
-        const totalTasks = await Task.countDocuments({ project: project._id });
-        const completedTasks = await Task.countDocuments({ project: project._id, status: 'done' });
-        const pendingTasks = await Task.countDocuments({ project: project._id, status: { $ne: 'done' } });
+        // Build task filter for this project
+        const taskFilter = { project: project._id };
+
+        if (startDate || endDate) {
+            taskFilter.createdAt = {};
+            if (startDate && !isNaN(new Date(startDate).getTime())) {
+                taskFilter.createdAt.$gte = new Date(startDate);
+            }
+            if (endDate && !isNaN(new Date(endDate).getTime())) {
+                taskFilter.createdAt.$lte = new Date(endDate);
+            }
+            if (Object.keys(taskFilter.createdAt).length === 0) {
+                delete taskFilter.createdAt;
+            }
+        }
+
+        const totalTasks = await Task.countDocuments(taskFilter);
+        const completedTasks = await Task.countDocuments({ ...taskFilter, status: 'done' });
+        const pendingTasks = await Task.countDocuments({ ...taskFilter, status: { $ne: 'done' } });
 
         const progress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
 

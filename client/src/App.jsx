@@ -14,6 +14,8 @@ import CreateTask from './pages/tasks/CreateTask';
 import TaskDetail from './pages/tasks/TaskDetail';
 import Timesheets from './pages/timesheets/Timesheets';
 import Analytics from './pages/analytics/Analytics';
+import AllUsers from './pages/admin/AllUsers';
+import CreateUser from './pages/admin/CreateUser';
 
 function App() {
     return (
@@ -23,7 +25,6 @@ function App() {
                 <Routes>
                     <Route element={<AuthLayout />}>
                         <Route path="/login" element={<Login />} />
-                        <Route path="/register" element={<Register />} />
                     </Route>
 
                     <Route element={<DashboardLayout />}>
@@ -38,6 +39,8 @@ function App() {
                         <Route path="/tasks/:id" element={<TaskDetail />} />
                         <Route path="/timesheets" element={<Timesheets />} />
                         <Route path="/analytics" element={<Analytics />} />
+                        <Route path="/admin/users" element={<AllUsers />} />
+                        <Route path="/admin/create-user" element={<CreateUser />} />
                     </Route>
                 </Routes>
             </AuthProvider>

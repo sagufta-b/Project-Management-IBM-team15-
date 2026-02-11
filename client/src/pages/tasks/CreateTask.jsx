@@ -28,8 +28,8 @@ const CreateTaskPage = () => {
         const fetchData = async () => {
             try {
                 const [projectsRes, usersRes] = await Promise.all([
-                    axios.get('/api/projects'),
-                    axios.get('/api/users')
+                    axios.get('http://localhost:5000/api/projects'),
+                    axios.get('http://localhost:5000/api/users')
                 ]);
                 setProjects(projectsRes.data.data);
                 setUsers(usersRes.data.data);
@@ -62,7 +62,7 @@ const CreateTaskPage = () => {
                 uploadData.append('file', file);
                 uploadData.append('project', formData.project);
 
-                const res = await axios.post('/api/files', uploadData, {
+                const res = await axios.post('http://localhost:5000/api/files', uploadData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
 
@@ -97,7 +97,7 @@ const CreateTaskPage = () => {
                 ...formData,
                 attachments: attachments
             };
-            await axios.post('/api/tasks', taskData);
+            await axios.post('http://localhost:5000/api/tasks', taskData);
             navigate('/tasks');
         } catch (error) {
             alert(error.response?.data?.message || "Failed to create task");

@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Organization = require('../models/Organization');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 const { OAuth2Client } = require('google-auth-library');
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -29,11 +30,14 @@ exports.register = asyncHandler(async (req, res) => {
         });
     }
 
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     // Create user
     const user = await User.create({
         name,
         email,
-        password,
+        password: hashedPassword,
         role: organizationName ? 'admin' : 'member', // First user is admin if org name provided
         organization: organization ? organization._id : undefined
     });
@@ -67,8 +71,14 @@ exports.login = asyncHandler(async (req, res) => {
         throw new Error('Invalid credentials');
     }
 
+    // Check if user is active
+    if (user.isActive === false) {
+        res.status(401);
+        throw new Error('Account is deactivated. Contact admin.');
+    }
+
     // Check if password matches
-    const isMatch = await user.matchPassword(password);
+    const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
         res.status(401);
@@ -100,14 +110,22 @@ exports.googleLogin = asyncHandler(async (req, res) => {
 
     if (!user) {
         // Create user if doesn't exist
+        const randomPassword = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
+        const hashedRandomPassword = await bcrypt.hash(randomPassword, 10);
         user = await User.create({
             name,
             email,
             avatar: picture,
-            password: Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10), // Random password
+            password: hashedRandomPassword,
             role: 'member'
         });
     } else {
+        // Check if existing user is active
+        if (user.isActive === false) {
+            res.status(401);
+            throw new Error('Account is deactivated. Contact admin.');
+        }
+
         // Update avatar if changed
         if (picture && user.avatar !== picture) {
             user.avatar = picture;
@@ -160,7 +178,8 @@ const sendTokenResponse = (user, statusCode, res) => {
                 email: user.email,
                 role: user.role,
                 organization: user.organization,
-                avatar: user.avatar
+                avatar: user.avatar,
+                isActive: user.isActive
             }
         });
 };

@@ -1,26 +1,26 @@
 const asyncHandler = require('express-async-handler');
 const Project = require('../models/Project');
 const User = require('../models/User');
+const Task = require('../models/Task');
 
 // @desc    Get all projects
 // @route   GET /api/projects
 // @access  Private
 exports.getProjects = asyncHandler(async (req, res) => {
-    let query;
+    let filter = {};
 
-    // If admin/admin-like, return all projects for the organization (or all if superadmin)
-    // For now assuming filtering by Organization
+    // Filter by Organization if exists
     if (req.user.organization) {
-        query = Project.find({ organization: req.user.organization });
-    } else {
-        // Fallback or Superadmin view
-        query = Project.find();
+        filter.organization = req.user.organization;
     }
 
-    // Populate manager details
-    query = query.populate('manager', 'name email avatar');
+    // Role-based filtering for Member
+    if (req.user.role === 'member') {
+        const assignedProjectIds = await Task.find({ assignees: req.user.id }).distinct('project');
+        filter._id = { $in: assignedProjectIds };
+    }
 
-    const projects = await query;
+    const projects = await Project.find(filter).populate('manager', 'name email avatar');
 
     res.status(200).json({
         success: true,
@@ -43,7 +43,18 @@ exports.getProject = asyncHandler(async (req, res) => {
         throw new Error(`Project not found with id of ${req.params.id}`);
     }
 
-    // Check access right here (omitted for brevity, assume middleware handles basic role-check)
+    // Role-based access check for Member
+    if (req.user.role === 'member') {
+        const hasTaskInProject = await Task.findOne({
+            project: req.params.id,
+            assignees: req.user.id
+        });
+
+        if (!hasTaskInProject) {
+            res.status(403);
+            throw new Error('Not authorized to access this project');
+        }
+    }
 
     res.status(200).json({
         success: true,
